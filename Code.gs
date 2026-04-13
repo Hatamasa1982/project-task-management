@@ -116,7 +116,7 @@ function handleRepeatTask(sheet, rowData, repeatType) {
 
   const newRowData = [...rowData];
   newRowData[CONFIG.COL_ID - 1] = Utilities.getUuid().split('-')[0]; // 新しいIDを発行（コピーさせない）
-  newRowData[CONFIG.COL_PROJECT_NAME - 1] = ""; // 関数を入れるため一旦クリアする
+  newRowData[CONFIG.COL_PROJECT_NAME - 1] = ""; 
   newRowData[CONFIG.COL_DATE_E - 1] = nextDate; // 期日
   newRowData[CONFIG.COL_DATE_F - 1] = nextDate; // 実施日
   newRowData[CONFIG.COL_STATUS - 1] = "FALSE";  // 完了フラグを外す（文字列のFALSE）
@@ -125,9 +125,8 @@ function handleRepeatTask(sheet, rowData, repeatType) {
   
   const lastRow = sheet.getLastRow();
   
-  // プロジェクト名を自動取得するVLOOKUP関数を挿入（C列の値でプロジェクトシートを検索）
-  const formula = `=IFERROR(VLOOKUP(C${lastRow}, '${CONFIG.PROJECT_SHEET_NAME}'!A:B, 2, FALSE), "")`;
-  sheet.getRange(lastRow, CONFIG.COL_PROJECT_NAME).setFormula(formula);
+  // ARRAYFORMULAの自動展開を妨げないように、追加された行のD列のセルを空っぽに戻します
+  sheet.getRange(lastRow, CONFIG.COL_PROJECT_NAME).clearContent();
   
   sheet.getRange(lastRow, CONFIG.COL_DATE_E).setNumberFormat("M/d(ddd)");
   sheet.getRange(lastRow, CONFIG.COL_DATE_F).setNumberFormat("M/d(ddd)");
