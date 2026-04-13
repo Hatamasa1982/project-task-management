@@ -75,9 +75,6 @@ function processTaskCompletion(ss, sheet, row) {
   const rowData = rowRange.getValues()[0];
   const repeatType = rowData[CONFIG.COL_REPEAT - 1];
 
-  // ★デバッグ用メッセージ：画面右下に10秒間、読み取った内容をお知らせします
-  ss.toast("読み取った内容 → L列: [" + repeatType + "] / F列: [" + rowData[CONFIG.COL_DATE_E - 1] + "]", "状況確認", 10);
-
   // カレンダー登録とリピート作成を分離し、一方のエラーで止まらないように安全に処理
   // --- カレンダー＆リピート作成 ---
   try {
@@ -98,9 +95,10 @@ function processTaskCompletion(ss, sheet, row) {
   // --- 完了転記と削除 ---
   try {
     const doneSheet = ss.getSheetByName(CONFIG.DONE_SHEET_NAME) || ss.insertSheet(CONFIG.DONE_SHEET_NAME);
-    doneSheet.appendRow(rowData);
     
-    const lastRowDone = doneSheet.getLastRow();
+    // 【修正箇所】一番下を探して追加する（ARRAYFORMULAの空白に騙されないようにする）
+    const lastRowDone = getRealLastRow(doneSheet) + 1;
+    doneSheet.getRange(lastRowDone, 1, 1, rowData.length).setValues([rowData]);
     
     // 完了タスクシートのD列もクリアしてあげる（同様にARRAYFORMULAを置くかもしれないため）
     doneSheet.getRange(lastRowDone, CONFIG.COL_PROJECT_NAME).clearContent();
@@ -143,17 +141,33 @@ function handleRepeatTask(sheet, rowData, repeatType) {
   newRowData[CONFIG.COL_DATE_F - 1] = nextDate; // 実施日
   newRowData[CONFIG.COL_STATUS - 1] = "FALSE";  // 完了フラグを外す（文字列のFALSE）
 
-  sheet.appendRow(newRowData);
-  
-  const lastRow = sheet.getLastRow();
+  // 【修正箇所】ARRAYFORMULAの影響を受けないように、本当にデータが有る行の下に追加
+  const targetRow = getRealLastRow(sheet) + 1;
+  sheet.getRange(targetRow, 1, 1, newRowData.length).setValues([newRowData]);
   
   // ARRAYFORMULAの自動展開を妨げないように、追加された行のD列のセルを空っぽに戻します
-  sheet.getRange(lastRow, CONFIG.COL_PROJECT_NAME).clearContent();
+  sheet.getRange(targetRow, CONFIG.COL_PROJECT_NAME).clearContent();
   
-  sheet.getRange(lastRow, CONFIG.COL_DATE_E).setNumberFormat("M/d(ddd)");
-  sheet.getRange(lastRow, CONFIG.COL_DATE_F).setNumberFormat("M/d(ddd)");
-  sheet.getRange(lastRow, CONFIG.COL_START_TIME).setNumberFormat("hh:mm");
-  sheet.getRange(lastRow, CONFIG.COL_END_TIME).setNumberFormat("hh:mm");
+  sheet.getRange(targetRow, CONFIG.COL_DATE_E).setNumberFormat("M/d(ddd)");
+  sheet.getRange(targetRow, CONFIG.COL_DATE_F).setNumberFormat("M/d(ddd)");
+  sheet.getRange(targetRow, CONFIG.COL_START_TIME).setNumberFormat("hh:mm");
+  sheet.getRange(targetRow, CONFIG.COL_END_TIME).setNumberFormat("hh:mm");
+}
+
+/**
+ * ARRAYFORMULAなどで空白に見えるセルを除き、A列で本当に値が入っている最後の行を取得する関数
+ */
+function getRealLastRow(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 1) return 1;
+  
+  const values = sheet.getRange(1, 1, lastRow, 1).getValues(); // A列を取得
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (values[i][0] !== "") {
+      return i + 1; // 値が入っている最後の行番号を返す
+    }
+  }
+  return 1; // データがなければ1行目を返す
 }
 
 /**
