@@ -35,17 +35,29 @@ function onEditTrigger(e) {
 
   if (row < 2) return; // ヘッダー行の編集は無視
 
-  // --- 0. タスクIDの自動割り当てと完了列(B列)自動入力 ---
+  // --- 0. タスクID等のデフォルト値自動割り当て ---
   if (sheetName === CONFIG.SHEET_NAME && val !== "") {
     const idRange = sheet.getRange(row, CONFIG.COL_ID);
     if (!idRange.getValue()) {
       const newId = Utilities.getUuid().split('-')[0];
       idRange.setValue(newId);
       
-      // 同時に完了状態が空なら「FALSE」を自動入力
+      // 完了状態(B列)が空なら「FALSE」を自動入力
       const statusRange = sheet.getRange(row, CONFIG.COL_STATUS);
       if (statusRange.getValue() === "") {
         statusRange.setValue("FALSE");
+      }
+      
+      // Repeat(C列)が空なら「None」を自動入力
+      const repeatRange = sheet.getRange(row, CONFIG.COL_REPEAT);
+      if (repeatRange.getValue() === "") {
+        repeatRange.setValue("None");
+      }
+      
+      // 項目(D列)が空なら「Private」を自動入力
+      const typeRange = sheet.getRange(row, CONFIG.COL_TYPE);
+      if (typeRange.getValue() === "") {
+        typeRange.setValue("Private");
       }
     }
   }
