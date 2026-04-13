@@ -75,6 +75,9 @@ function processTaskCompletion(ss, sheet, row) {
   const rowData = rowRange.getValues()[0];
   const repeatType = rowData[CONFIG.COL_REPEAT - 1];
 
+  // ★デバッグ用メッセージ：画面右下に10秒間、読み取った内容をお知らせします
+  ss.toast("読み取った内容 → L列: [" + repeatType + "] / F列: [" + rowData[CONFIG.COL_DATE_E - 1] + "]", "状況確認", 10);
+
   // カレンダー登録とリピート作成を分離し、一方のエラーで止まらないように安全に処理
   // --- カレンダー＆リピート作成 ---
   try {
